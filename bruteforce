@@ -1,0 +1,136 @@
+from random import randint
+
+Main = {0: [(1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16),(1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16)],#special case
+1 : [(2,3,5,7),(3,4,5,8)],
+2: [(1,6,10,12),(3,4,5,8)],
+3: [(4,8,11,13),(2,7,11,13)],
+4: [(2,3,5,7),(1,9,10,14)],
+5: [(2,3,5,7),(3,4,5,8)],
+6: [(1,6,10,12),(3,4,5,8)],
+7: [(9,14,15,16),(2,7,11,13)],
+8: [(4,8,11,13),(6,12,15,16)],
+9: [(2,3,5,7),(1,9,10,14)],
+10: [(4,8,11,13),(2,7,11,13)],
+11: [(1,6,10,12),(1,9,10,14)],
+12: [(9,14,15,16),(2,7,11,13)],
+13: [(9,14,15,16),(6,12,15,16)],
+14: [(4,8,11,13),(6,12,15,16)],
+15: [(1,6,10,12),(1,9,10,14)],
+16: [(9,14,15,16),(6,12,15,16)]}
+#left and above
+
+Main2 = {
+1:[[1,0],[0,0]],
+2:[[0,1],[0,0]],
+3:[[0,0],[0,1]],
+4:[[0,0],[1,0]],
+5:[[0,0],[0,0]],
+6:[[1,1],[0,0]],
+7:[[0,1],[0,1]],
+8:[[0,0],[1,1]],
+9:[[1,0],[1,0]],
+10:[[1,0],[0,1]],
+11:[[0,1],[1,0]],
+12:[[1,1],[0,1]],
+13:[[0,1],[1,1]],
+14:[[1,0],[1,1]],
+15:[[1,1],[1,0]],
+16:[[1,1],[1,1]]
+}
+def currentCombo(leftCombo,aboveCombo,boolean):
+    if 0 <=leftCombo<=16 and 0 <=aboveCombo<= 16:
+        if boolean:
+            return [i for i in Main[leftCombo][0] if i in Main[aboveCombo][1] and i<=4]
+        else:
+            return [i for i in Main[leftCombo][0] if i in Main[aboveCombo][1] and i>4]
+    else:
+        return -1
+
+def answer(g):
+    row = 0
+    col = 0
+    if g[0][0]:
+        cache = [[]]
+    else:
+        cache = [[]]
+    while col < len(g[0]):
+        final = []
+        for i in range(len(cache)):
+            if g[row][col]:
+                if row>0 and col>0:
+                    nextPath = currentCombo(cache[i][0],cache[i][-1],True)
+                elif row>0 and col == 0:
+                    nextPath = currentCombo(0,cache[i][-1],True)
+                elif row == 0 and col >0:
+                    nextPath = currentCombo(cache[i][0],0,True)
+                elif row == 0 and col == 0:
+                    nextPath = [1,2,3,4]
+                if col == 0:
+                    for j in nextPath:
+                        a = list(cache[i])
+                        a.append(j)
+                        final.append(a)
+                else:
+                    for j in nextPath:
+                        a = list(cache[i])
+                        a.append(j)
+                        final.append(a[-len(g):])
+            else:
+                if row>0 and col>0:
+                    nextPath = currentCombo(cache[i][0],cache[i][-1],False)
+                elif row>0 and col == 0:
+                    nextPath = currentCombo(0,cache[i][-1],False)
+                elif row == 0 and col >0:
+                    nextPath = currentCombo(cache[i][0],0,False)
+                elif row == 0 and col == 0:
+                    nextPath = [5,6,7,8,9,10,11,12,13,14,15,16]
+                if col == 0:
+                    for j in nextPath:
+                        a = list(cache[i])
+                        a.append(j)
+                        final.append(a)
+                else:
+                    for j in nextPath:
+                        a = list(cache[i])
+                        a.append(j)
+                        final.append(a[-len(g):])
+        cache = list(final)
+        row += 1
+        if row == len(g):
+            row = 0
+            col += 1
+        hello = []
+        for hi in final:
+            hello.append(hi[-1])
+    return final
+
+def testCase(g):
+    row = randint(3,50)
+    col = randint(3,9)
+    final = [[randint(0,1) for p in range(0,row)] for i in range(0,col)]
+    return final
+
+firstCaseThread = [[1, 5, 3, 5, 3, 11, 3, 11, 1], [2, 5, 4, 10, 2, 5, 4, 10, 2], [3, 11, 1, 11, 1, 5, 1, 5, 3], [4, 10, 2, 5, 4, 10, 2, 5, 4]]
+
+def slice(g):
+    final = {}
+    for i in range(len(g)):
+        for j in range(len(g[i])):
+            final[(j/len(g),j%len(g))] = []
+    for i in range(len(g)):
+        for j in range(len(g[i])):
+            final[(j/len(g),j%len(g))].append(g[i][j])
+    return final
+
+true = True
+false = False
+hey = [[true,true,true],[true,true,true],[true,true,true]]
+first = [[true, false, true], [false, true, false], [true, false, true]]
+second =  [[true, false, true, false, false, true, true, true], [true, false, true, false, false, false, true, false], [true, true, true, false, false, false, true, false], [true, false, true, false, false, false, true, false], [true, false, true, false, false, true, true, true]]
+third = [[true, true, false, true, false, true, false, true, true, false], [true, true, false, false, false, false, true, true, true, false], [true, true, false, false, false, false, false, false, false, true], [false, true, false, false, false, false, true, true, false, false]]
+test = testCase(first)
+
+
+a = 8
+[[1 for i in range(a)] for j in range(a)]
+print len(answer(test)), test

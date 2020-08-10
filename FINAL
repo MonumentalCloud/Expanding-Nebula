@@ -1,0 +1,103 @@
+from random import randint
+#this dictionary below is a bit confusing, so let me explain.
+#first, I realized that in reversing the one given square (either true or false) back to the four squares gives us 16 different combinations (2**4)
+#therefore, I've mapped all possible combinations to a more workable integers 1-16. If you want, you can take a look below to see what's going on
+'''1:[[1,0],[0,0]],
+2:[[0,1],[0,0]],
+3:[[0,0],[0,1]],
+4:[[0,0],[1,0]],
+5:[[0,0],[0,0]],
+6:[[1,1],[0,0]],
+7:[[0,1],[0,1]],
+8:[[0,0],[1,1]],
+9:[[1,0],[1,0]],
+10:[[1,0],[0,1]],
+11:[[0,1],[1,0]],
+12:[[1,1],[0,1]],
+13:[[0,1],[1,1]],
+14:[[1,0],[1,1]],
+15:[[1,1],[1,0]],
+16:[[1,1],[1,1]]
+}'''
+#as you can see, the combination 1-4 results from the previous cell True, while the rest equals False
+# with the above map in mind, I've created a dictionary named "main" below
+#each key represents each possible variant of boolean projection
+#and the two tuplels within the value of the dictionary responds to two scenarios the dictionary can be used in.
+#the first tuple refers to a situation where the key number was to the left of the current row,col location. It gives us the possible next combinations
+#the second tuple gives us next combos for the scenario where the key number is above the current cell
+#the function named currentCombo will later utilize this main dictionary by extracting the cell left and cell above and getting the combination the belongs to both
+# to recap, the dictionary is laid out as {combination number: [(tuple of combination numbers that can result from the current key being to the left of the current cell),(tuple of combination numbers that can result from the current key being above the current cell)]}
+Main = {0: [(1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16),(1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16)],#special case
+1 : [(2,3,5,7),(3,4,5,8)],
+2: [(1,6,10,12),(3,4,5,8)],
+3: [(4,8,11,13),(2,7,11,13)],
+4: [(2,3,5,7),(1,9,10,14)],
+5: [(2,3,5,7),(3,4,5,8)],
+6: [(1,6,10,12),(3,4,5,8)],
+7: [(9,14,15,16),(2,7,11,13)],
+8: [(4,8,11,13),(6,12,15,16)],
+9: [(2,3,5,7),(1,9,10,14)],
+10: [(4,8,11,13),(2,7,11,13)],
+11: [(1,6,10,12),(1,9,10,14)],
+12: [(9,14,15,16),(2,7,11,13)],
+13: [(9,14,15,16),(6,12,15,16)],
+14: [(4,8,11,13),(6,12,15,16)],
+15: [(1,6,10,12),(1,9,10,14)],
+16: [(9,14,15,16),(6,12,15,16)]}
+#left and above
+
+#this is the function that takes the left and above case combos and returns all possible numbers the current cell can be
+def currentCombo(leftCombo,aboveCombo,boolean):
+    if 0 <=leftCombo<=16 and 0 <=aboveCombo<= 16:
+        if boolean:
+            return [i for i in Main[leftCombo][0] if i in Main[aboveCombo][1] and i<=4]
+        else:
+            return [i for i in Main[leftCombo][0] if i in Main[aboveCombo][1] and i>4]
+
+cache = {}#this is a very important part of making this whole depth first search algorithm efficient.
+#this is a very standard recursive depth first search algorithm from this point on, except for the mechanism for cache registering
+def dfs(row, col, g, current, count):
+    if row == len(g):#this is a mechanism to move the cell over to the next column, when the row number gets over the length of the original matrix given
+        col += 1
+        row = 0
+    if row == len(g) or col == len(g[0]):#this is the case for when the tree has reached the end point
+        return 1#this signals that there is one way and return value gets added to the count variable. this will become clearer later
+    thisNode = hash(((row, col), str(current)))#this is an address for the cache dictionary. It avoids address collision by taking the location of current cell, and the last len(row) number of combinations
+    #keeping track of len(g) of last combinations is important because this ensures the result will always be the same.
+    #this can be expressed better in a diagram, which can be sent upon request
+    if thisNode in cache:#this is the case that sees if we have calculated this before, and saves the cpu a lot of duplicate work
+        return cache[thisNode]
+    elif row>0 and col>0:#this is for all current cells that's not at the starting point(0,0), or row 0 nor column 0
+        nextPath = currentCombo(current[-len(g)],current[-1],g[row][col])
+    elif row>0 and col == 0:#this is when the current cell doesn't have any left combination to take into account.
+        nextPath = currentCombo(0,current[-1],g[row][col])#the "0" in place of leftCombo is a special case that will go into function currentCombo and give back all numbers 1-16
+    elif row == 0 and col >0:#this is when the current cell doens't have any above combination to take into account
+        nextPath = currentCombo(current[-len(g)],0,g[row][col])#the "0" in place of aboveCombo is a special case that will go into function currentCombo and give back all numbers 1-16
+    elif row == 0 and col == 0:#since there is no left nor above case to take into account at the beginning, this just assigns all possible cases, depending on the boolean value
+        if g[row][col]:
+            nextPath = [1,2,3,4]
+        else:
+            nextPath = [5,6,7,8,9,10,11,12,13,14,15,16]
+    for j in nextPath:#this for loop iterates over the list of possible next values from currentCombo function and branches
+        a = list(current[-len(g):])# it's important to keep track of the current thread up to last row
+        a.append(j)#this expends the current array with the given child value
+        count += dfs(row+1,col,g,a, 0)#this is the recursive call into the child of the current node. Note that the row+1 which always moves the current cell down.
+    cache[thisNode] = count#this records the count for this specific recursive call, so CPU wouldn't have to do extra work in the future
+    return count
+
+
+def testCase(g):
+    row = randint(40,50)
+    col = randint(3,9)
+    final = [[randint(0,1) for p in range(0,row)] for i in range(0,col)]
+    return final
+true = True
+false = False
+hey = [[true,true,true],[true,true,true],[true,true,true]]
+first = [[true, false, true], [false, true, false], [true, false, true]]
+second =  [[true, false, true, false, false, true, true, true], [true, false, true, false, false, false, true, false], [true, true, true, false, false, false, true, false], [true, false, true, false, false, false, true, false], [true, false, true, false, false, true, true, true]]
+third = [[true, true, false, true, false, true, false, true, true, false], [true, true, false, false, false, false, true, true, true, false], [true, true, false, false, false, false, false, false, false, true], [false, true, false, false, false, false, true, true, false, false]]
+test = testCase(first)
+
+
+print dfs(0,0, test,[],0)
